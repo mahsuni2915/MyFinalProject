@@ -1,4 +1,5 @@
 ﻿using Business.Abstract;
+using Business.BusinessAspect.AutoFac;
 using Business.Constants;
 using Business.ValidationRules.FluentValidation;
 using Core.Aspects.Autofac.Validation;
@@ -16,7 +17,7 @@ using System.Text;
 
 namespace Business.Concrete
 {
-    public class ProductManager :IProductService
+    public class ProductManager : IProductService
     {
         IProductDal _productDal;
         ICategoryService _CategoryService;
@@ -33,16 +34,20 @@ namespace Business.Concrete
 
         }
 
-        [ValidationAspect(typeof(ProductValidator))]
+       //
+       [SecuredOperation("product.add,admin")]
+       [ValidationAspect(typeof(ProductValidator))]
+
+
         public IResult Add(Product product)
         {
-            IResult result =BusinessRule.Run(CheckIfProductNameExist(product.ProductName), 
-                CheckIfProductCountCategoryCorrect(product.CategoryId),CheckIfCategoryLimit());
+            IResult result = BusinessRule.Run(CheckIfProductNameExist(product.ProductName),
+                CheckIfProductCountCategoryCorrect(product.CategoryId), CheckIfCategoryLimit());
             //business code  iş ihtiyaçlarına uygunluk
             if (result != null)
             {
                 return result;
-              
+
             }
             _productDal.Add(product);
             return new SuccessResult(Messages.ProductAdded);
@@ -58,25 +63,25 @@ namespace Business.Concrete
             //    return new ErrorDataResult<List<Product>>(Messages.MaintenanceTime);
             //}
             //iş Kodlarım
-            return new SuccessDataResult<List<Product>>(_productDal.GetAll(),Messages.Productlisted);
+            return new SuccessDataResult<List<Product>>(_productDal.GetAll(), Messages.Productlisted);
 
 
         }
 
         public IDataResult<List<Product>> GetAllByCategoryID(int id)
         {
-            return new SuccessDataResult<List<Product>>( _productDal.GetAll(p=>p.CategoryId== id));
+            return new SuccessDataResult<List<Product>>(_productDal.GetAll(p => p.CategoryId == id));
         }
 
         public IDataResult<Product> GetById(int productId)
         {
-           return new SuccessDataResult<Product>(_productDal.Get(p => p.ProductId == productId));
+            return new SuccessDataResult<Product>(_productDal.Get(p => p.ProductId == productId));
         }
 
         public IDataResult<List<Product>> GetBYUnitPrice(decimal min, decimal max)
         {
-         return new SuccessDataResult<List<Product>>(_productDal.GetAll
-             (p => p.UnitPrice <= min && p.UnitPrice <= max));
+            return new SuccessDataResult<List<Product>>(_productDal.GetAll
+                (p => p.UnitPrice <= min && p.UnitPrice <= max));
         }
 
         public IDataResult<List<ProductDetailDto>> GetProductDetails()
@@ -104,7 +109,7 @@ namespace Business.Concrete
             }
             return new SuccessResult();
         }
-        private IResult CheckIfProductNameExist(String productName )
+        private IResult CheckIfProductNameExist(String productName)
         {
             var result = _productDal.GetAll(p => p.ProductName == productName).Any();
             if (result)
